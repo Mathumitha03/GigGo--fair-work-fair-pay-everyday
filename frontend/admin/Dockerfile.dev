@@ -1,0 +1,14 @@
+# Development Dockerfile with Hot Reload / HMR support for Vite
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+
+# Vite requires --host 0.0.0.0 to accept connections outside the container
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
