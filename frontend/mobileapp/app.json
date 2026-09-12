@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "GigGo",
+    "slug": "giggo-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/customer-3d.jpg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FAF6EE"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF6EE"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
