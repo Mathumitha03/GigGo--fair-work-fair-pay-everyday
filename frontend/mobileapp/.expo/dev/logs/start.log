@@ -1,0 +1,22 @@
+{"_e":"root:init","_t":1789293615521,"format":"v0-jsonl","version":"57.0.23"}
+{"_e":"env:mode","_t":1789293615524,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1789293615529,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1789293616344,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1789293617571,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"expo:dev-tools-plugin:load","_t":1789293618501,"plugins":[]}
+{"_e":"metro:instantiate","_t":1789293627428,"atlas":false,"workers":4,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1789293740746,"id":"1","platform":"web","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:done","_t":1789293754283,"id":"1","total":374,"ms":13537.3478}
+{"_e":"metro:client_log","_t":1789293754750,"level":"info","data":["%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools","font-weight:bold"]}
+{"_e":"metro:client_log","_t":1789293754755,"level":"warn","data":["\"shadow*\" style props are deprecated. Use \"boxShadow\"."]}
+{"_e":"metro:client_log","_t":1789293754755,"level":"log","data":["Running application \"main\" with appParams:\n","{\"hydrate\": undefined, \"rootTag\": \"#root\"}","\nDevelopment-level warnings: ON.\nPerformance optimizations: OFF."]}
+{"_e":"root:init","_t":1789294397064,"format":"v0-jsonl","version":"57.0.23"}
+{"_e":"env:mode","_t":1789294397066,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1789294397068,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1789294397483,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1789294398284,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"expo:dev-tools-plugin:load","_t":1789294399020,"plugins":[]}
+{"_e":"metro:instantiate","_t":1789294406938,"atlas":false,"workers":4,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1789294498105,"id":"4","platform":"android","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:done","_t":1789294510852,"id":"4","total":923,"ms":12745.5932}
+{"_e":"metro:client_log","_t":1789294513516,"level":"warn","data":["SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context"]}
