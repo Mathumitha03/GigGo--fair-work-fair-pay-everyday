@@ -72,6 +72,22 @@ public class LabourCooperative extends BaseEntity {
     @Column(name = "commission_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal commissionRate = new BigDecimal("5.00");
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @NotNull
+    @DecimalMin(value = "0.00")
+    @Builder.Default
+    @Column(name = "welfare_fund_balance", nullable = false, precision = 14, scale = 2)
+    private BigDecimal welfareFundBalance = BigDecimal.ZERO;
+
+    @Column(name = "insurance_scheme_details", columnDefinition = "TEXT")
+    private String insuranceSchemeDetails;
+
+    @jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @jakarta.persistence.JoinColumn(name = "created_by_worker_id")
+    private com.GigGo.entity.profile.Worker createdByWorker;
+
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

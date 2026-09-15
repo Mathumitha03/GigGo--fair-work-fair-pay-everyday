@@ -80,6 +80,14 @@ public class CommissionRecord extends BaseEntity {
     @Column(name = "worker_share", precision = 12, scale = 2)
     private BigDecimal workerShare;
 
+    @DecimalMin(value = "0.00")
+    @Column(name = "welfare_fund_share", precision = 12, scale = 2)
+    private BigDecimal welfareFundShare;
+
+    @DecimalMin(value = "0.00")
+    @Column(name = "insurance_pool_share", precision = 12, scale = 2)
+    private BigDecimal insurancePoolShare;
+
     @NotNull
     @Builder.Default
     @Enumerated(EnumType.STRING)
