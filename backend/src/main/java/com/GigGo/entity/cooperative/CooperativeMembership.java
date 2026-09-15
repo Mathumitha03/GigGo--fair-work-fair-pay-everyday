@@ -74,6 +74,12 @@ public class CooperativeMembership extends BaseEntity {
     @Column(name = "status", nullable = false, length = 30)
     private MembershipStatus status = MembershipStatus.PENDING;
 
+    @Column(name = "request_notes", length = 500)
+    private String requestNotes;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
     @Column(name = "verified_at")
     private Instant verifiedAt;
 

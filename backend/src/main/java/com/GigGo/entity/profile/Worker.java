@@ -70,6 +70,32 @@ public class Worker extends BaseEntity {
     @Column(name = "verification_status", nullable = false, length = 30)
     private WorkerVerificationStatus verificationStatus = WorkerVerificationStatus.UNVERIFIED;
 
+    @NotNull
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "affiliation_status", nullable = false, length = 30)
+    private com.GigGo.enums.AffiliationStatus affiliationStatus = com.GigGo.enums.AffiliationStatus.UNAFFILIATED;
+
+    @Column(name = "welfare_member_id", length = 50)
+    private String welfareMemberId;
+
+    @Column(name = "insurance_policy_number", length = 100)
+    private String insurancePolicyNumber;
+
+    @Column(name = "emergency_contact_name", length = 100)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
+
+    @DecimalMin(value = "0.00")
+    @Column(name = "hourly_rate", precision = 10, scale = 2)
+    private BigDecimal hourlyRate;
+
+    public boolean isAffiliated() {
+        return this.affiliationStatus == com.GigGo.enums.AffiliationStatus.AFFILIATED && this.primaryCooperative != null;
+    }
+
     /**
      * Weight used by the fair cooperative rotation dispatch algorithm.
      * Adjusted dynamically based on gig history and fair-share allocation.

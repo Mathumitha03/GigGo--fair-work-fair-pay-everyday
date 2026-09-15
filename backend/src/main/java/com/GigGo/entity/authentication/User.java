@@ -26,6 +26,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(
     name = "users",
     indexes = {
+        @Index(name = "idx_users_username", columnList = "username", unique = true),
         @Index(name = "idx_users_phone", columnList = "phone", unique = true),
         @Index(name = "idx_users_email", columnList = "email"),
         @Index(name = "idx_users_role", columnList = "role"),
@@ -40,6 +41,10 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder
 @ToString(exclude = {"passwordHash"})
 public class User extends BaseEntity {
+
+    @Size(max = 50)
+    @Column(name = "username", unique = true, length = 50)
+    private String username;
 
     @NotBlank
     @Size(max = 100)
