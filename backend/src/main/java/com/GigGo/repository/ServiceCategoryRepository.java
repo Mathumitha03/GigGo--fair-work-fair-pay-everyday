@@ -1,0 +1,23 @@
+package com.GigGo.repository;
+
+import com.GigGo.entity.service.ServiceCategory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, UUID> {
+
+    Optional<ServiceCategory> findByName(String name);
+
+    Optional<ServiceCategory> findBySlug(String slug);
+
+    boolean existsByName(String name);
+
+    boolean existsBySlug(String slug);
+
+    List<ServiceCategory> findAllByIsActiveTrueOrderByDisplayOrderAsc();
+}
