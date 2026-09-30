@@ -23,6 +23,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import com.GigGo.security.oauth2.CustomOAuth2UserService;
+import com.GigGo.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.GigGo.security.oauth2.OAuth2AuthenticationSuccessHandler;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -32,17 +36,16 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oauth2AuthenticationFailureHandler;
+    private final PasswordEncoder passwordEncoder;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
@@ -61,6 +64,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cooperatives/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/categories/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -75,6 +79,13 @@ public class SecurityConfig {
 
                         // Any other request must be authenticated
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
+                        .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oauth2AuthenticationSuccessHandler)
+                        .failureHandler(oauth2AuthenticationFailureHandler)
                 );
 
         http.authenticationProvider(authenticationProvider());

@@ -16,10 +16,13 @@ import com.GigGo.enums.WorkerVerificationStatus;
 import com.GigGo.repository.AdminRepository;
 import com.GigGo.repository.CooperativeManagerRepository;
 import com.GigGo.repository.CustomerRepository;
+import com.GigGo.repository.PasswordResetTokenRepository;
 import com.GigGo.repository.UserRepository;
 import com.GigGo.repository.WorkerRepository;
 import com.GigGo.security.JwtTokenProvider;
 import com.GigGo.security.UserPrincipal;
+import com.GigGo.service.EmailService;
+import com.GigGo.service.GoogleAuthService;
 import com.GigGo.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,6 +67,15 @@ public class AuthServiceTest {
 
     @Mock
     private CooperativeManagerRepository cooperativeManagerRepository;
+
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private GoogleAuthService googleAuthService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -226,5 +238,128 @@ public class AuthServiceTest {
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
         assertThrows(BadCredentialsException.class, () -> authService.login(request));
+    }
+
+    @Test
+    @DisplayName("Forgot password with registered email creates token and sends email")
+    void testForgotPassword_RegisteredEmail() {
+        com.GigGo.dto.auth.ForgotPasswordRequest request = com.GigGo.dto.auth.ForgotPasswordRequest.builder()
+                .email("admin@giggo.coop")
+                .build();
+
+        when(userRepository.findByEmail("admin@giggo.coop")).thenReturn(Optional.of(sampleAdminUser));
+
+        authService.forgotPassword(request);
+
+        verify(passwordResetTokenRepository).invalidateAllActiveTokensForUser(any(User.class), any(java.time.Instant.class));
+        verify(passwordResetTokenRepository).save(any(com.GigGo.entity.authentication.PasswordResetToken.class));
+        verify(emailService).sendPasswordResetEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Forgot password with unregistered email avoids enumeration and does not send email")
+    void testForgotPassword_UnregisteredEmail() {
+        com.GigGo.dto.auth.ForgotPasswordRequest request = com.GigGo.dto.auth.ForgotPasswordRequest.builder()
+                .email("nonexistent@giggo.coop")
+                .build();
+
+        when(userRepository.findByEmail("nonexistent@giggo.coop")).thenReturn(Optional.empty());
+
+        authService.forgotPassword(request);
+
+        verify(passwordResetTokenRepository, org.mockito.Mockito.never()).save(any());
+        verify(emailService, org.mockito.Mockito.never()).sendPasswordResetEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Reset password with valid token hashes new password and marks token used")
+    void testResetPassword_ValidToken() {
+        com.GigGo.dto.auth.ResetPasswordRequest request = com.GigGo.dto.auth.ResetPasswordRequest.builder()
+                .token("valid-reset-token-123")
+                .newPassword("NewSecurePassword@2026")
+                .build();
+
+        com.GigGo.entity.authentication.PasswordResetToken token = com.GigGo.entity.authentication.PasswordResetToken.builder()
+                .user(sampleAdminUser)
+                .token("valid-reset-token-123")
+                .expiresAt(java.time.Instant.now().plusSeconds(600))
+                .isUsed(false)
+                .build();
+
+        when(passwordResetTokenRepository.findByToken("valid-reset-token-123")).thenReturn(Optional.of(token));
+        when(passwordEncoder.encode("NewSecurePassword@2026")).thenReturn("$2a$12$newHashedPassword");
+
+        authService.resetPassword(request);
+
+        assertEquals(true, token.isUsed());
+        assertNotNull(token.getUsedAt());
+        assertEquals("$2a$12$newHashedPassword", sampleAdminUser.getPasswordHash());
+
+        verify(userRepository).save(sampleAdminUser);
+        verify(passwordResetTokenRepository).save(token);
+    }
+
+    @Test
+    @DisplayName("Reset password with expired token throws IllegalArgumentException")
+    void testResetPassword_ExpiredToken() {
+        com.GigGo.dto.auth.ResetPasswordRequest request = com.GigGo.dto.auth.ResetPasswordRequest.builder()
+                .token("expired-token-123")
+                .newPassword("NewSecurePassword@2026")
+                .build();
+
+        com.GigGo.entity.authentication.PasswordResetToken token = com.GigGo.entity.authentication.PasswordResetToken.builder()
+                .user(sampleAdminUser)
+                .token("expired-token-123")
+                .expiresAt(java.time.Instant.now().minusSeconds(600))
+                .isUsed(false)
+                .build();
+
+        when(passwordResetTokenRepository.findByToken("expired-token-123")).thenReturn(Optional.of(token));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> authService.resetPassword(request));
+        assertEquals("Password reset token has expired. Please request a new one", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Reset password with already used token throws IllegalArgumentException")
+    void testResetPassword_AlreadyUsedToken() {
+        com.GigGo.dto.auth.ResetPasswordRequest request = com.GigGo.dto.auth.ResetPasswordRequest.builder()
+                .token("used-token-123")
+                .newPassword("NewSecurePassword@2026")
+                .build();
+
+        com.GigGo.entity.authentication.PasswordResetToken token = com.GigGo.entity.authentication.PasswordResetToken.builder()
+                .user(sampleAdminUser)
+                .token("used-token-123")
+                .expiresAt(java.time.Instant.now().plusSeconds(600))
+                .isUsed(true)
+                .usedAt(java.time.Instant.now().minusSeconds(100))
+                .build();
+
+        when(passwordResetTokenRepository.findByToken("used-token-123")).thenReturn(Optional.of(token));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> authService.resetPassword(request));
+        assertEquals("This password reset token has already been used", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Google Login delegates to GoogleAuthService")
+    void testGoogleLogin_Delegation() {
+        com.GigGo.dto.auth.GoogleAuthRequest request = com.GigGo.dto.auth.GoogleAuthRequest.builder()
+                .idToken("google-id-token-abc")
+                .build();
+
+        AuthResponse mockAuthResponse = AuthResponse.builder()
+                .accessToken("google.user.jwt")
+                .tokenType("Bearer")
+                .build();
+
+        when(googleAuthService.authenticateGoogleUser(request)).thenReturn(mockAuthResponse);
+
+        AuthResponse result = authService.googleLogin(request);
+
+        assertNotNull(result);
+        assertEquals("google.user.jwt", result.getAccessToken());
+        verify(googleAuthService).authenticateGoogleUser(request);
     }
 }

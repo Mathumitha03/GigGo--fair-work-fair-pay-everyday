@@ -51,9 +51,8 @@ public class User extends BaseEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @NotBlank
     @Size(max = 20)
-    @Column(name = "phone", nullable = false, unique = true, length = 20)
+    @Column(name = "phone", unique = true, length = 20)
     private String phone;
 
     @Email

@@ -2,6 +2,7 @@ package com.GigGo.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,12 +28,12 @@ public class WorkerRegisterRequest {
     @Size(max = 20)
     private String phone;
 
-    @Email(message = "Invalid email format")
+    @Email(regexp = AuthValidationConstants.EMAIL_REGEX, message = AuthValidationConstants.EMAIL_INVALID_MESSAGE)
     @Size(max = 150)
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
+    @Pattern(regexp = AuthValidationConstants.PASSWORD_REGEX, message = AuthValidationConstants.PASSWORD_INVALID_MESSAGE)
     private String password;
 
     /**

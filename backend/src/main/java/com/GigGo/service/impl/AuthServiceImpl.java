@@ -34,7 +34,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.GigGo.dto.auth.AuthValidationConstants;
+import com.GigGo.dto.auth.ForgotPasswordRequest;
+import com.GigGo.dto.auth.GoogleAuthRequest;
+import com.GigGo.dto.auth.ResetPasswordRequest;
+import com.GigGo.entity.authentication.PasswordResetToken;
+import com.GigGo.repository.PasswordResetTokenRepository;
+import com.GigGo.service.EmailService;
+import com.GigGo.service.GoogleAuthService;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,14 +61,26 @@ public class AuthServiceImpl implements AuthService {
     private final CustomerRepository customerRepository;
     private final AdminRepository adminRepository;
     private final CooperativeManagerRepository cooperativeManagerRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
+    private final GoogleAuthService googleAuthService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+
+    @Value("${giggo.auth.reset-token-expiration-minutes:${RESET_TOKEN_EXPIRATION_MINUTES:15}}")
+    private int resetTokenExpirationMinutes = 15;
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Override
     @Transactional
     public AuthResponse registerCustomer(CustomerRegisterRequest request) {
         validateRegistrationUniqueness(request.getPhone(), request.getEmail(), request.getUsername());
+        validateStrongPassword(request.getPassword());
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            validateEmailFormat(request.getEmail());
+        }
 
         User user = User.builder()
                 .name(request.getName().trim())
@@ -88,6 +113,10 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse registerWorker(WorkerRegisterRequest request) {
         validateRegistrationUniqueness(request.getPhone(), request.getEmail(), request.getUsername());
+        validateStrongPassword(request.getPassword());
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            validateEmailFormat(request.getEmail());
+        }
 
         User user = User.builder()
                 .name(request.getName().trim())
@@ -125,6 +154,10 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse registerAdmin(AdminRegisterRequest request) {
         validateRegistrationUniqueness(request.getPhone(), request.getEmail(), request.getUsername());
+        validateStrongPassword(request.getPassword());
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            validateEmailFormat(request.getEmail());
+        }
 
         User user = User.builder()
                 .name(request.getName().trim())
@@ -193,6 +226,98 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         return buildUserProfileDto(user);
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        validateEmailFormat(email);
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // Invalidate any previously issued active tokens for this user
+            passwordResetTokenRepository.invalidateAllActiveTokensForUser(user, Instant.now());
+
+            // Generate cryptographically secure token (64 hex characters)
+            byte[] randomBytes = new byte[32];
+            SECURE_RANDOM.nextBytes(randomBytes);
+            String rawToken = HexFormat.of().formatHex(randomBytes);
+
+            Instant expiresAt = Instant.now().plus(Duration.ofMinutes(resetTokenExpirationMinutes));
+
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .user(user)
+                    .token(rawToken)
+                    .expiresAt(expiresAt)
+                    .isUsed(false)
+                    .build();
+
+            passwordResetTokenRepository.save(resetToken);
+
+            // Send password reset email
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), rawToken);
+            log.info("Password reset request processed for email '{}' (User ID: {})", email, user.getId());
+        } else {
+            // Avoid user enumeration: log privately and continue
+            log.info("Password reset requested for non-existent email '{}'", email);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        validateStrongPassword(request.getNewPassword());
+
+        String tokenString = request.getToken().trim();
+
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(tokenString)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
+
+        if (resetToken.isUsed()) {
+            throw new IllegalArgumentException("This password reset token has already been used");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(Instant.now())) {
+            throw new IllegalArgumentException("Password reset token has expired. Please request a new one");
+        }
+
+        User user = resetToken.getUser();
+        if (user == null) {
+            throw new IllegalArgumentException("Invalid password reset token: associated user not found");
+        }
+
+        // Update password with existing password encoder
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Mark token as used
+        resetToken.setUsed(true);
+        resetToken.setUsedAt(Instant.now());
+        passwordResetTokenRepository.save(resetToken);
+
+        log.info("Password reset successfully completed for user ID: {}", user.getId());
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
+        return googleAuthService.authenticateGoogleUser(request);
+    }
+
+    private void validateEmailFormat(String email) {
+        if (!AuthValidationConstants.isValidEmail(email)) {
+            throw new IllegalArgumentException(AuthValidationConstants.EMAIL_INVALID_MESSAGE);
+        }
+    }
+
+    private void validateStrongPassword(String password) {
+        if (!AuthValidationConstants.isValidPassword(password)) {
+            throw new IllegalArgumentException(AuthValidationConstants.PASSWORD_INVALID_MESSAGE);
+        }
     }
 
     private void validateRegistrationUniqueness(String phone, String email, String username) {

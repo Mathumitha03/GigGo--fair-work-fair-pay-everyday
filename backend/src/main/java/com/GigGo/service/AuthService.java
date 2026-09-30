@@ -8,6 +8,10 @@ import com.GigGo.dto.auth.RefreshTokenRequest;
 import com.GigGo.dto.auth.UserProfileDto;
 import com.GigGo.dto.auth.WorkerRegisterRequest;
 
+import com.GigGo.dto.auth.ForgotPasswordRequest;
+import com.GigGo.dto.auth.GoogleAuthRequest;
+import com.GigGo.dto.auth.ResetPasswordRequest;
+
 import java.util.UUID;
 
 public interface AuthService {
@@ -23,4 +27,10 @@ public interface AuthService {
     AuthResponse refreshToken(RefreshTokenRequest request);
 
     UserProfileDto getCurrentUserProfile(UUID userId);
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
+
+    AuthResponse googleLogin(GoogleAuthRequest request);
 }

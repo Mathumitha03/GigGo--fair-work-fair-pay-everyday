@@ -23,10 +23,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.GigGo.dto.auth.ForgotPasswordRequest;
+import com.GigGo.dto.auth.GoogleAuthRequest;
+import com.GigGo.dto.auth.ResetPasswordRequest;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication & Onboarding", description = "Endpoints for Customer, Worker, Admin registration, Unified Login, and Profile")
+@Tag(name = "Authentication & Onboarding", description = "Endpoints for Customer, Worker, Admin registration, Unified Login, Password Reset, and Google Authentication")
 public class AuthController {
 
     private final AuthService authService;
@@ -67,6 +71,31 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refreshToken(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot Password", description = "Sends a password reset link to the provided email address if registered")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account with that email exists, a password reset link has been sent to your email address."
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset Password", description = "Validates the one-time reset token and updates the user password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password has been reset successfully. You can now login with your new password."
+        ));
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Google Authentication Provider", description = "Authenticates user with Google ID token, performs safe account linking, and returns standard JWT tokens")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = authService.googleLogin(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Google authentication successful"));
     }
 
     @GetMapping("/me")
