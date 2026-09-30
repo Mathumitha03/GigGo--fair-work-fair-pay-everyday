@@ -32,5 +32,13 @@ services:
       db:
         condition: service_healthy
 
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: giggo-ai-service
+    ports:
+      - "8000:8000"
+    restart: always
+
 volumes:
   postgres_data:
