@@ -59,6 +59,7 @@ async function request(endpoint, options = {}) {
 export const AdminApiService = {
   getAdminToken,
   setAdminToken,
+
   async login(identifier, password) {
     const json = await request('/api/v1/auth/login', {
       method: 'POST',
@@ -95,5 +96,5 @@ export const AdminApiService = {
 
   logout() {
     setAdminToken(null);
-  }
+  },
 };

@@ -20,16 +20,16 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '40px', color: '#fff', background: '#0B0F19', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+        <div style={{ padding: '40px', color: '#1E293B', background: '#FFF8E1', minHeight: '100vh', fontFamily: 'sans-serif' }}>
           <h2>Something went wrong while rendering Admin Portal</h2>
-          <pre style={{ background: '#1E293B', padding: '16px', borderRadius: '8px', marginTop: '16px', overflowX: 'auto', color: '#EF4444' }}>
+          <pre style={{ background: '#FFFDF6', padding: '16px', borderRadius: '8px', marginTop: '16px', overflowX: 'auto', color: '#EF4444', border: '1px solid #A3C4BC' }}>
             {this.state.error?.toString()}
           </pre>
           <button
             onClick={() => { localStorage.clear(); window.location.reload(); }}
-            style={{ marginTop: '20px', padding: '12px 24px', borderRadius: '8px', background: '#0B63E5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+            style={{ marginTop: '20px', padding: '12px 24px', borderRadius: '8px', background: '#4B7D73', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            Clear Cache & Reload
+            Clear Cache &amp; Reload
           </button>
         </div>
       );
