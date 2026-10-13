@@ -20,4 +20,10 @@ public class JoinCooperativeRequestDto {
     private UUID cooperativeId;
 
     private String requestNotes;
+
+    public UUID getCooperativeId() { return cooperativeId; }
+    public void setCooperativeId(UUID cooperativeId) { this.cooperativeId = cooperativeId; }
+
+    public String getRequestNotes() { return requestNotes; }
+    public void setRequestNotes(String requestNotes) { this.requestNotes = requestNotes; }
 }

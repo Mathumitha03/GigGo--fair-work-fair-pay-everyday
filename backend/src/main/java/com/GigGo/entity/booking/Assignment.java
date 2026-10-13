@@ -32,6 +32,7 @@ import java.time.Instant;
         @Index(name = "idx_assignments_booking", columnList = "booking_id"),
         @Index(name = "idx_assignments_worker", columnList = "worker_id"),
         @Index(name = "idx_assignments_status", columnList = "status"),
+        @Index(name = "idx_assignments_expires", columnList = "expires_at"),
         @Index(name = "idx_assignments_created", columnList = "created_at")
     }
 )
@@ -80,6 +81,21 @@ public class Assignment extends BaseEntity {
     @Column(name = "assigned_at", nullable = false)
     private Instant assignedAt = Instant.now();
 
+    @Column(name = "expires_at")
+    private Instant expiresAt;
+
     @Column(name = "responded_at")
     private Instant respondedAt;
+
+    public boolean isExpired() {
+        return expiresAt != null && Instant.now().isAfter(expiresAt);
+    }
+
+    public boolean isExpired(Instant now) {
+        return expiresAt != null && now.isAfter(expiresAt);
+    }
+
+    public Integer getAttemptNumber() {
+        return rank;
+    }
 }

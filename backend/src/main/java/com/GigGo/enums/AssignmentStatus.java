@@ -5,5 +5,6 @@ public enum AssignmentStatus {
     ACCEPTED,
     REJECTED,
     AUTO_EXPIRED,
+    TIMED_OUT,
     CANCELLED
 }

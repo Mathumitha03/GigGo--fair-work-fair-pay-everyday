@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.UUID;
 
 @Getter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UserPrincipal implements UserDetails {
@@ -44,6 +46,30 @@ public class UserPrincipal implements UserDetails {
                 .status(user.getStatus())
                 .authorities(Collections.singletonList(authority))
                 .build();
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public UserStatus getStatus() {
+        return status;
     }
 
     @Override

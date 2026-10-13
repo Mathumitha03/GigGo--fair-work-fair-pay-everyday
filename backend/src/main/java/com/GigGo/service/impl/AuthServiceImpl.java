@@ -16,9 +16,11 @@ import com.GigGo.enums.AffiliationStatus;
 import com.GigGo.enums.UserRole;
 import com.GigGo.enums.UserStatus;
 import com.GigGo.enums.WorkerVerificationStatus;
+import com.GigGo.entity.cooperative.LabourCooperative;
 import com.GigGo.repository.AdminRepository;
 import com.GigGo.repository.CooperativeManagerRepository;
 import com.GigGo.repository.CustomerRepository;
+import com.GigGo.repository.LabourCooperativeRepository;
 import com.GigGo.repository.UserRepository;
 import com.GigGo.repository.WorkerRepository;
 import com.GigGo.security.JwtTokenProvider;
@@ -48,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final CustomerRepository customerRepository;
     private final AdminRepository adminRepository;
     private final CooperativeManagerRepository cooperativeManagerRepository;
+    private final LabourCooperativeRepository cooperativeRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
@@ -71,8 +74,14 @@ public class AuthServiceImpl implements AuthService {
 
         user = userRepository.save(user);
 
+        LabourCooperative coop = null;
+        if (request.getCooperativeId() != null) {
+            coop = cooperativeRepository.findById(request.getCooperativeId()).orElse(null);
+        }
+
         Customer customer = Customer.builder()
                 .user(user)
+                .cooperative(coop)
                 .defaultAddress(request.getDefaultAddress())
                 .city(request.getCity())
                 .state(request.getState())
@@ -89,6 +98,11 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse registerWorker(WorkerRegisterRequest request) {
         validateRegistrationUniqueness(request.getPhone(), request.getEmail(), request.getUsername());
 
+        String rawWorkerId = request.getEffectiveWorkerId();
+        String normalizedCooperativeWorkerId = (rawWorkerId != null && !rawWorkerId.isBlank())
+                ? rawWorkerId.trim().toUpperCase()
+                : null;
+
         User user = User.builder()
                 .name(request.getName().trim())
                 .username(request.getUsername() != null && !request.getUsername().isBlank() ? request.getUsername().trim() : null)
@@ -103,9 +117,10 @@ public class AuthServiceImpl implements AuthService {
 
         user = userRepository.save(user);
 
-        // Initially worker is UNAFFILIATED and UNVERIFIED
+        // Worker is registered by Manager with assigned cooperativeWorkerId and initial UNVERIFIED status
         Worker worker = Worker.builder()
                 .user(user)
+                .cooperativeWorkerId(normalizedCooperativeWorkerId)
                 .skills(request.getSkills())
                 .experienceYears(request.getExperienceYears() != null ? request.getExperienceYears() : 0)
                 .upiId(request.getUpiId())
@@ -238,6 +253,7 @@ public class AuthServiceImpl implements AuthService {
         if (workerOpt.isPresent()) {
             Worker worker = workerOpt.get();
             builder.workerId(worker.getId())
+                    .cooperativeWorkerId(worker.getCooperativeWorkerId())
                     .isAffiliated(worker.isAffiliated())
                     .affiliationStatus(worker.getAffiliationStatus())
                     .verificationStatus(worker.getVerificationStatus())
@@ -274,6 +290,10 @@ public class AuthServiceImpl implements AuthService {
                     .defaultAddress(customer.getDefaultAddress())
                     .city(customer.getCity())
                     .state(customer.getState());
+            if (customer.getCooperative() != null) {
+                builder.customerCooperativeId(customer.getCooperative().getId())
+                        .customerCooperativeName(customer.getCooperative().getName());
+            }
         }
 
         // Admin details

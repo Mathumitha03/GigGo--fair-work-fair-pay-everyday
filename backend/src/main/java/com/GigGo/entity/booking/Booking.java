@@ -5,6 +5,7 @@ import com.GigGo.entity.profile.Customer;
 import com.GigGo.entity.profile.Worker;
 import com.GigGo.entity.service.ServiceCategory;
 import com.GigGo.entity.service.ServiceOffering;
+import com.GigGo.entity.service.ServiceProblem;
 import com.GigGo.enums.BookingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -70,6 +71,10 @@ public class Booking extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_category_id", nullable = false)
     private ServiceCategory serviceCategory;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_problem_id")
+    private ServiceProblem serviceProblem;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_worker_id")

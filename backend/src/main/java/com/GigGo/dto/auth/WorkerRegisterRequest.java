@@ -43,6 +43,18 @@ public class WorkerRegisterRequest {
     @Builder.Default
     private Integer experienceYears = 0;
 
+    @NotBlank(message = "Cooperative Worker ID is required")
+    private String workerId;
+
+    private String cooperativeWorkerId;
+
+    public String getEffectiveWorkerId() {
+        if (workerId != null && !workerId.isBlank()) {
+            return workerId;
+        }
+        return cooperativeWorkerId;
+    }
+
     private String upiId;
     private String emergencyContactName;
     private String emergencyContactPhone;

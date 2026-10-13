@@ -2,8 +2,13 @@ package com.GigGo.enums;
 
 public enum BookingStatus {
     REQUESTED,
+    REQUEST_CREATED,
+    SEARCHING_WORKER,
+    WAITING_FOR_WORKER,
     ASSIGNED,
     ACCEPTED,
+    REJECTED,
+    NO_WORKER_AVAILABLE,
     IN_PROGRESS,
     COMPLETED,
     CANCELLED,

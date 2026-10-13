@@ -34,6 +34,7 @@ import java.math.BigDecimal;
     name = "workers",
     indexes = {
         @Index(name = "idx_workers_user_id", columnList = "user_id", unique = true),
+        @Index(name = "idx_workers_cooperative_worker_id", columnList = "cooperative_worker_id", unique = true),
         @Index(name = "idx_workers_cooperative", columnList = "primary_cooperative_id"),
         @Index(name = "idx_workers_verification", columnList = "verification_status"),
         @Index(name = "idx_workers_avail_rotation", columnList = "is_available, rotation_weight")
@@ -52,6 +53,9 @@ public class Worker extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    @Column(name = "cooperative_worker_id", unique = true, length = 20)
+    private String cooperativeWorkerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "primary_cooperative_id")

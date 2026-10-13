@@ -24,6 +24,22 @@ public class ApiResponse<T> {
     @Builder.Default
     private Instant timestamp = Instant.now();
 
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
                 .success(true)

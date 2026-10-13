@@ -25,11 +25,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/worker/cooperatives")
-@RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('WORKER', 'COOPERATIVE_MANAGER')")
 @Tag(name = "Worker Cooperative Affiliation", description = "Endpoints for Workers to request new society creation or join existing societies")
 public class WorkerAffiliationController {
 
     private final CooperativeAffiliationService affiliationService;
+
+    public WorkerAffiliationController(CooperativeAffiliationService affiliationService) {
+        this.affiliationService = affiliationService;
+    }
 
     // --- Option 1: Worker sends request to create a new cooperative society ---
     @PostMapping("/request-creation")
@@ -56,7 +60,7 @@ public class WorkerAffiliationController {
 
     // --- Option 2: Worker sends request to join an existing cooperative society ---
     @PostMapping("/request-join")
-    @PreAuthorize("hasRole('WORKER')")
+    @PreAuthorize("hasAnyRole('WORKER', 'COOPERATIVE_MANAGER')")
     @Operation(summary = "Option 2: Request to Join Existing Cooperative Society", description = "Worker sends request to join an existing cooperative. If Moderator approves, worker becomes an affiliated member.")
     public ResponseEntity<ApiResponse<MembershipResponseDto>> requestJoinSociety(
             @AuthenticationPrincipal UserPrincipal userPrincipal,

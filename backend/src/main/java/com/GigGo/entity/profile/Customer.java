@@ -1,12 +1,14 @@
 package com.GigGo.entity.profile;
 
 import com.GigGo.entity.authentication.User;
+import com.GigGo.entity.cooperative.LabourCooperative;
 import com.GigGo.entity.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -34,13 +36,17 @@ import org.locationtech.jts.geom.Point;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(exclude = "user")
+@ToString(exclude = {"user", "cooperative"})
 public class Customer extends BaseEntity {
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cooperative_id")
+    private LabourCooperative cooperative;
 
     @Size(max = 255)
     @Column(name = "default_address")

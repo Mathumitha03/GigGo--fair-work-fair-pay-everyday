@@ -12,6 +12,8 @@ import com.GigGo.enums.MembershipStatus;
 import com.GigGo.enums.UserRole;
 import com.GigGo.enums.UserStatus;
 import com.GigGo.enums.WorkerVerificationStatus;
+import com.GigGo.entity.service.ServiceProblem;
+import com.GigGo.repository.ServiceProblemRepository;
 import com.GigGo.repository.AdminRepository;
 import com.GigGo.repository.CooperativeManagerRepository;
 import com.GigGo.repository.CooperativeMembershipRepository;
@@ -29,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -43,6 +47,7 @@ public class DataInitializer implements CommandLineRunner {
     private final LabourCooperativeRepository cooperativeRepository;
     private final CooperativeMembershipRepository membershipRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
+    private final ServiceProblemRepository serviceProblemRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -51,7 +56,7 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Starting GigGo Data Initialization & Idempotency Check...");
 
         seedFederationAdmin();
-        seedServiceCategories();
+        seedServiceCategoriesAndProblems();
         seedSampleCooperativeAndUsers();
 
         log.info("GigGo Data Initialization completed successfully.");
@@ -105,29 +110,85 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     /**
-     * Seeds essential service categories if empty.
+     * Seeds essential service categories and guarantees their associated problems exist.
      */
-    private void seedServiceCategories() {
-        if (serviceCategoryRepository.count() > 0) {
-            log.info("Service categories already populated (count: {}). Skipping seeding.", serviceCategoryRepository.count());
-            return;
-        }
-
-        List<ServiceCategory> categories = List.of(
-                ServiceCategory.builder().name("Electrician").slug("electrician").description("Electrical wiring, installations, repairs, and fault detection").basePrice(new BigDecimal("350.00")).displayOrder(1).build(),
-                ServiceCategory.builder().name("Plumber").slug("plumber").description("Pipe fitting, leakage repair, bathroom & kitchen plumbing services").basePrice(new BigDecimal("300.00")).displayOrder(2).build(),
-                ServiceCategory.builder().name("Carpenter").slug("carpenter").description("Furniture repair, woodwork, modular cabinetry and fixtures").basePrice(new BigDecimal("400.00")).displayOrder(3).build(),
-                ServiceCategory.builder().name("Painter").slug("painter").description("Interior, exterior wall painting, touchups and waterproofing").basePrice(new BigDecimal("450.00")).displayOrder(4).build(),
-                ServiceCategory.builder().name("Domestic Helper").slug("domestic-helper").description("Household daily chores, dusting, utensil cleaning and assistance").basePrice(new BigDecimal("250.00")).displayOrder(5).build(),
-                ServiceCategory.builder().name("Caregiver").slug("caregiver").description("Elderly care, patient care, nursing assistance and companionship").basePrice(new BigDecimal("500.00")).displayOrder(6).build(),
-                ServiceCategory.builder().name("Driver").slug("driver").description("Personal and commercial on-demand chauffeuring services").basePrice(new BigDecimal("350.00")).displayOrder(7).build(),
-                ServiceCategory.builder().name("Gardener").slug("gardener").description("Lawn maintenance, plant trimming, landscaping and garden care").basePrice(new BigDecimal("280.00")).displayOrder(8).build(),
-                ServiceCategory.builder().name("Cleaner").slug("cleaner").description("Deep house cleaning, kitchen scrubbing, bathroom sanitization").basePrice(new BigDecimal("400.00")).displayOrder(9).build(),
-                ServiceCategory.builder().name("Technician").slug("technician").description("Appliance repair for AC, refrigerator, washing machine and microwave").basePrice(new BigDecimal("450.00")).displayOrder(10).build()
+    private void seedServiceCategoriesAndProblems() {
+        // 1. Ensure primary required categories exist
+        List<ServiceCategory> requiredCategories = List.of(
+                ServiceCategory.builder().name("CARPENTER").slug("carpenter").description("Furniture repair, woodwork, modular cabinetry and fixtures").basePrice(new BigDecimal("400.00")).displayOrder(1).build(),
+                ServiceCategory.builder().name("PAINTER").slug("painter").description("Interior, exterior wall painting, touchups and waterproofing").basePrice(new BigDecimal("450.00")).displayOrder(2).build(),
+                ServiceCategory.builder().name("CLEANER").slug("cleaner").description("Deep house cleaning, kitchen scrubbing, bathroom sanitization").basePrice(new BigDecimal("400.00")).displayOrder(3).build(),
+                ServiceCategory.builder().name("GARDEN_CLEANER").slug("garden-cleaner").description("Lawn maintenance, plant trimming, landscaping and garden care").basePrice(new BigDecimal("280.00")).displayOrder(4).build(),
+                ServiceCategory.builder().name("Electrician").slug("electrician").description("Electrical wiring, installations, repairs, and fault detection").basePrice(new BigDecimal("350.00")).displayOrder(5).build(),
+                ServiceCategory.builder().name("Plumber").slug("plumber").description("Pipe fitting, leakage repair, bathroom & kitchen plumbing services").basePrice(new BigDecimal("300.00")).displayOrder(6).build()
         );
 
-        serviceCategoryRepository.saveAll(categories);
-        log.info("Seeded {} standard cooperative service categories.", categories.size());
+        for (ServiceCategory reqCat : requiredCategories) {
+            if (!serviceCategoryRepository.existsBySlug(reqCat.getSlug()) && !serviceCategoryRepository.existsByName(reqCat.getName())) {
+                serviceCategoryRepository.save(reqCat);
+                log.info("Saved required service category: '{}'", reqCat.getName());
+            }
+        }
+
+        // 2. Iterate through ALL categories in the database and ensure every category has problems linked to it
+        List<ServiceCategory> allCategories = serviceCategoryRepository.findAll();
+        List<ServiceProblem> newProblemsToSave = new ArrayList<>();
+
+        for (ServiceCategory cat : allCategories) {
+            List<ServiceProblem> existingProblems = serviceProblemRepository.findByCategoryId(cat.getId());
+            if (!existingProblems.isEmpty()) {
+                continue; // Category already has problems configured in DB
+            }
+
+            String identifier = (cat.getName() + " " + cat.getSlug()).toLowerCase();
+
+            if (identifier.contains("carpenter")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Door Repair").description("Fix wooden door hinges, lock alignment, or frame damage").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Furniture Repair").description("Table, chair, bed frame repair and polishing").estimatedPrice(new BigDecimal("450.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Cupboard Repair").description("Cabinet door fixing, shelf alignment and hinge replacement").estimatedPrice(new BigDecimal("400.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Window Repair").description("Wooden window sash, latch, and frame repairs").estimatedPrice(new BigDecimal("300.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Carpenter Problem").description("General custom carpentry repair and woodwork").estimatedPrice(new BigDecimal("350.00")).build());
+            } else if (identifier.contains("paint")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Wall Painting").description("Single or multi-room wall interior painting").estimatedPrice(new BigDecimal("800.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Ceiling Painting").description("Ceiling coat, crack filling, and whitewashing").estimatedPrice(new BigDecimal("600.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Door Painting").description("Door, window frame, and enamel paint coating").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Exterior Painting").description("Weatherproof exterior building wall painting").estimatedPrice(new BigDecimal("1200.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Painting Problem").description("Patching wall scratches, dampness treatment, and touch-ups").estimatedPrice(new BigDecimal("400.00")).build());
+            } else if (identifier.contains("clean") && !identifier.contains("garden")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("House Cleaning").description("Complete home sanitization, dusting, and mopping").estimatedPrice(new BigDecimal("600.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Bathroom Cleaning").description("Tile descaling, toilet scrubbing, and disinfected bathroom wash").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Kitchen Cleaning").description("Deep kitchen counter, chimney, and appliance degreasing").estimatedPrice(new BigDecimal("450.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Deep Cleaning").description("Full house deep scrub, upholstery shampooing, and vacuuming").estimatedPrice(new BigDecimal("800.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Cleaning Problem").description("Custom household cleaning request").estimatedPrice(new BigDecimal("350.00")).build());
+            } else if (identifier.contains("garden")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Garden Cleaning").description("Lawn sweeping, yard cleanup, and garden waste collection").estimatedPrice(new BigDecimal("300.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Grass Cutting").description("Lawn grass cutting, edge trimming, and weed removal").estimatedPrice(new BigDecimal("250.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Plant Maintenance").description("Shrub pruning, plant watering, and fertilizer application").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Garden Waste Removal").description("Foliage waste bagging, branch disposal, and clearing").estimatedPrice(new BigDecimal("250.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Garden Problem").description("Tree branch pruning and general landscaping care").estimatedPrice(new BigDecimal("400.00")).build());
+            } else if (identifier.contains("electric")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Wiring Fault Repair").description("Short circuit fix and wiring inspection").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Switchboard Repair").description("Socket, switch, and fuse replacement").estimatedPrice(new BigDecimal("250.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Fan Installation").description("Ceiling or exhaust fan assembly and mounting").estimatedPrice(new BigDecimal("300.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Appliance Power Fix").description("Inverter, MCB, or main line troubleshooting").estimatedPrice(new BigDecimal("400.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Electrical Problem").description("General electrical fixture repair").estimatedPrice(new BigDecimal("300.00")).build());
+            } else if (identifier.contains("plumb")) {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Pipe Leakage Repair").description("Fixing water pipe leaks and joint sealing").estimatedPrice(new BigDecimal("300.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Tap & Faucet Repair").description("Kitchen/bathroom tap washer or fixture replacement").estimatedPrice(new BigDecimal("250.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Blocked Drain Cleaning").description("Unclogging sink, shower, or drain pipes").estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Toilet Fixture Repair").description("Flush tank, flush valve, or seal repair").estimatedPrice(new BigDecimal("400.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Other Plumbing Problem").description("General plumbing fixture repair").estimatedPrice(new BigDecimal("300.00")).build());
+            } else {
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Standard Repair & Maintenance").description("General service repair for " + cat.getName()).estimatedPrice(new BigDecimal("350.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Diagnostic & Inspection").description("Inspection and fault diagnosis").estimatedPrice(new BigDecimal("200.00")).build());
+                newProblemsToSave.add(ServiceProblem.builder().category(cat).name("Custom Service Request").description("Custom service request for " + cat.getName()).estimatedPrice(new BigDecimal("400.00")).build());
+            }
+        }
+
+        if (!newProblemsToSave.isEmpty()) {
+            serviceProblemRepository.saveAll(newProblemsToSave);
+            log.info("Seeded {} new service problems across existing service categories.", newProblemsToSave.size());
+        }
     }
 
     /**

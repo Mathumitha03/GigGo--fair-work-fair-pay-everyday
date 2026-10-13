@@ -101,6 +101,7 @@ public class AuthServiceTest {
                 .phone("9894942310")
                 .email("arun@example.com")
                 .password("Worker@123")
+                .workerId("TN-27")
                 .skills("Electrician, Wiring")
                 .experienceYears(5)
                 .build();

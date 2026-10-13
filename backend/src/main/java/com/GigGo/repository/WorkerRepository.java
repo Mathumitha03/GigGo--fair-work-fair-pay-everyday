@@ -30,6 +30,9 @@ public interface WorkerRepository extends JpaRepository<Worker, UUID> {
     @Query("SELECT w FROM Worker w WHERE w.affiliationStatus = 'AFFILIATED' AND w.isAvailable = true AND w.primaryCooperative.id = :cooperativeId")
     List<Worker> findAvailableAffiliatedWorkersByCooperative(@Param("cooperativeId") UUID cooperativeId);
 
+    @Query("SELECT w FROM Worker w WHERE w.affiliationStatus = 'AFFILIATED' AND w.isAvailable = true AND w.primaryCooperative.id = :cooperativeId ORDER BY w.rotationWeight DESC, w.currentRating DESC")
+    List<Worker> findEligibleWorkersByCooperativeSorted(@Param("cooperativeId") UUID cooperativeId);
+
     @Query("SELECT w FROM Worker w WHERE w.affiliationStatus = 'AFFILIATED' AND w.isAvailable = true")
     List<Worker> findAllAvailableAffiliatedWorkers();
 }

@@ -40,6 +40,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Access denied: You do not have the required permissions for this action"));
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<String>> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Bad argument: {}", ex.getMessage());

@@ -34,6 +34,7 @@ public class UserProfileDto {
 
     // Worker specific
     private UUID workerId;
+    private String cooperativeWorkerId;
     private Boolean isAffiliated;
     private AffiliationStatus affiliationStatus;
     private WorkerVerificationStatus verificationStatus;
@@ -54,6 +55,8 @@ public class UserProfileDto {
 
     // Customer specific
     private UUID customerId;
+    private UUID customerCooperativeId;
+    private String customerCooperativeName;
     private String defaultAddress;
     private String city;
     private String state;

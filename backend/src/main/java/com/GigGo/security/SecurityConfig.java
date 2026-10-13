@@ -62,7 +62,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cooperatives/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/services/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/services/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -70,8 +70,8 @@ public class SecurityConfig {
                         // Role-specific endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/cooperative-manager/**", "/api/v1/moderator/**").hasAnyRole("COOPERATIVE_MANAGER", "ADMIN")
-                        .requestMatchers("/api/v1/worker/**").hasRole("WORKER")
-                        .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/worker/**", "/api/v1/workers/**").hasAnyRole("WORKER", "COOPERATIVE_MANAGER")
+                        .requestMatchers("/api/v1/customer/**", "/api/v1/service-requests/**").hasRole("CUSTOMER")
 
                         // Any other request must be authenticated
                         .anyRequest().authenticated()

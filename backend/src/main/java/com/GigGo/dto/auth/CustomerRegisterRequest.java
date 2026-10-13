@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,6 +37,7 @@ public class CustomerRegisterRequest {
     @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
     private String password;
 
+    private UUID cooperativeId;
     private String defaultAddress;
     private String city;
     private String state;
